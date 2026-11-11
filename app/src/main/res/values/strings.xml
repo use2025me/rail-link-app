@@ -5,7 +5,7 @@
     <string name="offline_title">You\'re offline</string>
     <string name="offline_message">We couldn\'t reach Rail Link. Check your Wi-Fi or mobile data, then try again.</string>
     <string name="retry">Try again</string>
-    <string name="powered_by">Powered by <b>Devil Stream</b></string>
+    <string name="powered_by">Powered by <b><font color="#6AA5CF">Devil Stream</font></b></string>
     <string name="tab_rail">Rail Link</string>
     <string name="tab_jp">Junction+</string>
 </resources>
