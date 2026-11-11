@@ -77,6 +77,17 @@
                     android:background="@drawable/brand_line" />
             </FrameLayout>
         </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="36dp"
+            android:alpha="0.7"
+            android:letterSpacing="0.08"
+            android:text="@string/powered_by"
+            android:textColor="@color/grey"
+            android:textSize="12sp" />
     </FrameLayout>
 
     <!-- No connection -->
@@ -132,5 +143,15 @@
             android:textAllCaps="false"
             android:textColor="@color/white"
             android:textSize="17sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="48dp"
+            android:alpha="0.7"
+            android:letterSpacing="0.08"
+            android:text="@string/powered_by"
+            android:textColor="@color/grey"
+            android:textSize="12sp" />
     </LinearLayout>
 </FrameLayout>
