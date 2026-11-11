@@ -30,4 +30,4 @@ password: without them, updates won't install over the old app.
 ## Changing things
 - Start page and which websites stay in the app: `app/src/main/java/com/raillink/app/Config.kt`
 - Colours: `app/src/main/res/values/colors.xml`
-- Icon: `app/src/main/res/drawable/ic_launcher_foreground.xml` (placeholder until the official logo is added)
+- Icon and logo: `app/src/main/res/drawable-nodpi/` (made from the official Rail Link logo)
