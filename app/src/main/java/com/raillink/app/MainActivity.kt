@@ -173,7 +173,7 @@ class MainActivity : ComponentActivity() {
                 .setInterpolator(DecelerateInterpolator()).start()
         }
         loadingAnim = ObjectAnimator.ofFloat(
-            findViewById(R.id.loading_bar), View.TRANSLATION_X, -64 * d, 160 * d
+            findViewById(R.id.loading_bar), View.TRANSLATION_X, -48 * d, 120 * d
         ).apply {
             duration = 1100
             repeatCount = ValueAnimator.INFINITE

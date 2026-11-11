@@ -15,8 +15,8 @@
         </shape>
     </item>
     <item
-        android:width="240dp"
-        android:height="48dp"
+        android:width="200dp"
+        android:height="40dp"
         android:gravity="center"
         android:bottom="16dp"
         android:drawable="@drawable/logo_full" />
