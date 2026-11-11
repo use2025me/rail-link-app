@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TV home-screen tile (320 x 180): Rail Link mark on charcoal, with a steel-blue-to-crimson line -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <size android:width="320dp" android:height="180dp" />
+            <gradient
+                android:type="radial"
+                android:gradientRadius="170dp"
+                android:centerX="0.5"
+                android:centerY="0.45"
+                android:startColor="#FF3E5568"
+                android:centerColor="#FF32383F"
+                android:endColor="#FF2D2E31" />
+        </shape>
+    </item>
+    <item
+        android:width="120dp"
+        android:height="120dp"
+        android:gravity="center"
+        android:bottom="28dp"
+        android:drawable="@drawable/logo_full" />
+    <item
+        android:width="120dp"
+        android:height="3dp"
+        android:gravity="center_horizontal|bottom"
+        android:bottom="30dp"
+        android:drawable="@drawable/brand_line" />
+</layer-list>
