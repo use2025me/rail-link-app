@@ -123,11 +123,11 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|center_horizontal"
             android:layout_marginBottom="36dp"
-            android:alpha="0.7"
+            android:alpha="0.95"
             android:letterSpacing="0.08"
             android:text="@string/powered_by"
             android:textColor="@color/grey"
-            android:textSize="12sp" />
+            android:textSize="14sp" />
     </FrameLayout>
 
     <!-- No connection -->
@@ -188,10 +188,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="48dp"
-            android:alpha="0.7"
+            android:alpha="0.95"
             android:letterSpacing="0.08"
             android:text="@string/powered_by"
             android:textColor="@color/grey"
-            android:textSize="12sp" />
+            android:textSize="14sp" />
     </LinearLayout>
 </FrameLayout>
