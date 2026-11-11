@@ -9,6 +9,8 @@ Newest version (works with the Downloader app too):
 
 https://github.com/use2025me/rail-link-app/releases/latest/download/RailLink.apk
 
+Downloader code: **9947611** (aftv.news/9947611)
+
 ## What it does
 - Opens raillinknetworking.com full screen, in Rail Link colours (steel blue, charcoal, crimson)
 - Keeps people signed in

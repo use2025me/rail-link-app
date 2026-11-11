@@ -5,7 +5,7 @@ object Config {
     const val HOME_URL = "https://www.raillinknetworking.com"
 
     /** Downloader app code for installing/updating on Fire TV and Android TV. */
-    const val DOWNLOADER_CODE = ""
+    const val DOWNLOADER_CODE = "9947611"
 
     /**
      * Websites that open inside the app. Anything else (e.g. LinkedIn, WhatsApp)
