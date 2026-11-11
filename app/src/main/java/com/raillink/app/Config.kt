@@ -4,6 +4,9 @@ object Config {
     /** The page the app opens on. */
     const val HOME_URL = "https://www.raillinknetworking.com"
 
+    /** The page the Junction+ tab opens on. */
+    const val JP_URL = "https://stream.junctionplus.com"
+
     /** Downloader app code for installing/updating on Fire TV and Android TV. */
     const val DOWNLOADER_CODE = "9947611"
 

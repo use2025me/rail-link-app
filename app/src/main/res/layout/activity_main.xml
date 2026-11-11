@@ -5,17 +5,56 @@
     android:layout_height="match_parent"
     android:background="@color/black">
 
-    <!-- Pull down at the top of a page to refresh -->
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipe"
+    <!-- Website area on top, Rail Link / Junction+ buttons along the bottom -->
+    <LinearLayout
+        android:id="@+id/content"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <WebView
-            android:id="@+id/webview"
+        <!-- Pull down at the top of a page to refresh -->
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipe"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <WebView
+                    android:id="@+id/webview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <WebView
+                    android:id="@+id/webview_jp"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="gone" />
+            </FrameLayout>
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <!-- The two tabs -->
+        <LinearLayout
+            android:id="@+id/tabs"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="@drawable/tab_bar_bg"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tab_rail"
+                style="@style/RailLink.Tab"
+                android:text="@string/tab_rail" />
+
+            <TextView
+                android:id="@+id/tab_jp"
+                style="@style/RailLink.Tab"
+                android:text="@string/tab_jp" />
+        </LinearLayout>
+    </LinearLayout>
 
     <!-- Thin teal-to-yellow bar while a page loads -->
     <ProgressBar

@@ -30,6 +30,7 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -41,7 +42,14 @@ import androidx.core.view.WindowInsetsControllerCompat
 class MainActivity : ComponentActivity() {
 
     private lateinit var root: FrameLayout
+    // Two websites, one per tab. "webView" is whichever one is showing.
     private lateinit var webView: WebView
+    private lateinit var railView: WebView
+    private lateinit var jpView: WebView
+    private lateinit var tabs: View
+    private lateinit var tabRail: TextView
+    private lateinit var tabJp: TextView
+    private var jpLoaded = false
     private lateinit var progress: ProgressBar
     private lateinit var swipe: SwipeRefreshLayout
     private var pageAtTop = true
@@ -74,7 +82,12 @@ class MainActivity : ComponentActivity() {
         setContentView(R.layout.activity_main)
 
         root = findViewById(R.id.root)
-        webView = findViewById(R.id.webview)
+        railView = findViewById(R.id.webview)
+        jpView = findViewById(R.id.webview_jp)
+        webView = railView
+        tabs = findViewById(R.id.tabs)
+        tabRail = findViewById(R.id.tab_rail)
+        tabJp = findViewById(R.id.tab_jp)
         progress = findViewById(R.id.progress)
         swipe = findViewById(R.id.swipe)
         offline = findViewById(R.id.offline)
@@ -92,8 +105,12 @@ class MainActivity : ComponentActivity() {
             insets
         }
 
-        setupWebView()
+        setupWebView(railView)
+        setupWebView(jpView)
         setupPullToRefresh()
+        tabRail.setOnClickListener { showTab(railView) }
+        tabJp.setOnClickListener { showTab(jpView) }
+        tabRail.isSelected = true
 
         // Let the video use the whole screen, including around the camera cut-out.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -113,7 +130,7 @@ class MainActivity : ComponentActivity() {
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
             )
-            tvRemote = TvRemote(webView, cursor).also { remote ->
+            tvRemote = TvRemote(webView, cursor, root).also { remote ->
                 webView.post { remote.show(true) }
             }
         }
@@ -130,16 +147,17 @@ class MainActivity : ComponentActivity() {
                     fullscreenView != null -> exitFullscreen()
                     videoMode -> exitVideoMode()
                     webView.canGoBack() -> webView.goBack()
+                    webView === jpView -> showTab(railView) // Back from Junction+ returns to Rail Link
                     else -> finish()
                 }
             }
         })
 
         if (savedInstanceState != null) {
-            webView.restoreState(savedInstanceState)
+            railView.restoreState(savedInstanceState)
             hideLoading()
         } else {
-            webView.loadUrl(startUrl(intent))
+            openLink(intent?.data)
             UpdateChecker(this).check()
         }
 
@@ -174,7 +192,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun setupWebView() {
+    private fun setupWebView(webView: WebView) {
         WebView.setWebContentsDebuggingEnabled(false)
         CookieManager.getInstance().apply {
             setAcceptCookie(true)
@@ -207,7 +225,7 @@ class MainActivity : ComponentActivity() {
         webView.setOnLongClickListener {
             webView.hitTestResult.type != WebView.HitTestResult.EDIT_TEXT_TYPE
         }
-        webView.addJavascriptInterface(JsBridge(), VideoMode.BRIDGE)
+        webView.addJavascriptInterface(JsBridge(webView), VideoMode.BRIDGE)
         webView.setBackgroundColor(getColor(R.color.black))
 
         webView.webViewClient = object : WebViewClient() {
@@ -231,6 +249,7 @@ class MainActivity : ComponentActivity() {
             }
 
             override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
+                if (view !== this@MainActivity.webView) return // the hidden tab loads quietly
                 currentPageInternal = url != null && isInternal(Uri.parse(url)) && url.startsWith("https://")
                 exitVideoMode() // a new page never starts in video mode
                 pageAtTop = true
@@ -245,6 +264,11 @@ class MainActivity : ComponentActivity() {
             }
 
             override fun onPageFinished(view: WebView, url: String?) {
+                if (view !== this@MainActivity.webView) {
+                    view.evaluateJavascript(Polish.SCRIPT, null)
+                    view.evaluateJavascript(VideoMode.PLAY_HOOK, null)
+                    return
+                }
                 handler.removeCallbacks(showProgress)
                 progress.animate().alpha(0f).setDuration(250).withEndAction {
                     progress.visibility = View.GONE
@@ -263,7 +287,7 @@ class MainActivity : ComponentActivity() {
                 request: WebResourceRequest,
                 error: WebResourceError
             ) {
-                if (request.isForMainFrame) {
+                if (request.isForMainFrame && view === this@MainActivity.webView) {
                     keepSplash = false
                     hideLoading()
                     webView.visibility = View.INVISIBLE
@@ -275,6 +299,7 @@ class MainActivity : ComponentActivity() {
 
         webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView, newProgress: Int) {
+                if (view !== this@MainActivity.webView) return
                 progress.setProgress(newProgress, true)
             }
 
@@ -325,16 +350,16 @@ class MainActivity : ComponentActivity() {
     }
 
     /** Called from the website when a video starts playing. */
-    inner class JsBridge {
+    inner class JsBridge(private val owner: WebView) {
         @JavascriptInterface
         fun onVideoPlay() {
-            if (!currentPageInternal) return
+            if (!currentPageInternal || owner !== webView) return
             runOnUiThread { updateVideoMode() }
         }
 
         @JavascriptInterface
         fun onScrollTop(atTop: Boolean) {
-            if (!currentPageInternal) return
+            if (!currentPageInternal || owner !== webView) return
             pageAtTop = atTop
         }
     }
@@ -368,6 +393,7 @@ class MainActivity : ComponentActivity() {
             if (result?.contains("on") == true && !videoMode) {
                 videoMode = true
                 progress.visibility = View.GONE
+                tabs.visibility = View.GONE
                 WindowInsetsControllerCompat(window, window.decorView).apply {
                     hide(WindowInsetsCompat.Type.systemBars())
                     systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -381,6 +407,7 @@ class MainActivity : ComponentActivity() {
     private fun exitVideoMode() {
         if (!videoMode) return
         videoMode = false
+        tabs.visibility = View.VISIBLE
         webView.evaluateJavascript(VideoMode.EXIT, null)
         WindowInsetsControllerCompat(window, window.decorView).show(WindowInsetsCompat.Type.systemBars())
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -422,34 +449,74 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun startUrl(intent: Intent?): String {
-        val data = intent?.data
-        return if (data != null && isInternal(data)) data.toString() else Config.HOME_URL
+    /** Switch between the Rail Link and Junction+ tabs. Each keeps its own page and history. */
+    private fun showTab(target: WebView) {
+        if (target === jpView && !jpLoaded) {
+            jpLoaded = true
+            jpView.loadUrl(Config.JP_URL)
+        }
+        if (target === webView) {
+            // Tapping the tab you're already on goes back to its home page.
+            val home = if (target === jpView) Config.JP_URL else Config.HOME_URL
+            if (target.url?.trimEnd('/') != home.trimEnd('/')) target.loadUrl(home)
+            return
+        }
+        exitVideoMode()
+        swipe.isRefreshing = false
+        pageAtTop = true
+        target.visibility = View.VISIBLE
+        webView.visibility = View.GONE
+        webView = target
+        currentPageInternal = target.url?.let { isInternal(Uri.parse(it)) } ?: true
+        tvRemote?.webView = target
+        tabRail.isSelected = target === railView
+        tabJp.isSelected = target === jpView
+        offline.visibility = View.GONE
+        target.visibility = View.VISIBLE
+    }
+
+    /** Open a link from outside the app in the right tab (Junction+ links go to the Junction+ tab). */
+    private fun openLink(data: Uri?) {
+        val host = data?.host?.lowercase() ?: ""
+        val isJp = host == "junctionplus.com" || host.endsWith(".junctionplus.com")
+        when {
+            data == null || !isInternal(data) -> railView.loadUrl(Config.HOME_URL)
+            isJp -> {
+                railView.loadUrl(Config.HOME_URL)
+                jpLoaded = true
+                jpView.loadUrl(data.toString())
+                showTab(jpView)
+            }
+            else -> railView.loadUrl(data.toString())
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent.data?.let { if (isInternal(it)) webView.loadUrl(it.toString()) }
+        intent.data?.let { if (isInternal(it)) openLink(it) }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        webView.saveState(outState)
+        railView.saveState(outState)
     }
 
     override fun onResume() {
         super.onResume()
-        webView.onResume()
+        railView.onResume()
+        jpView.onResume()
     }
 
     override fun onPause() {
-        webView.onPause()
+        railView.onPause()
+        jpView.onPause()
         CookieManager.getInstance().flush()
         super.onPause()
     }
 
     override fun onDestroy() {
-        webView.destroy()
+        railView.destroy()
+        jpView.destroy()
         super.onDestroy()
     }
 }

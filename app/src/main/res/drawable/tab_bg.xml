@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Selected tab gets a crimson line underneath; TV remote focus gets a steel-blue outline -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape><stroke android:width="2dp" android:color="#FF6AA5CF" /></shape>
+    </item>
+    <item android:state_selected="true">
+        <layer-list>
+            <item android:gravity="bottom" android:height="3dp" android:left="36dp" android:right="36dp">
+                <shape><solid android:color="#FF8D1A31" /><corners android:radius="2dp" /></shape>
+            </item>
+        </layer-list>
+    </item>
+    <item><color android:color="#00000000" /></item>
+</selector>

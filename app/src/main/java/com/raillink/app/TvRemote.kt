@@ -58,16 +58,16 @@ class CursorView(context: Context) : View(context) {
  * Lets a TV remote drive the website: arrows move the pointer (and scroll at the
  * edges), OK clicks, media buttons control the video.
  */
-class TvRemote(private val webView: WebView, private val cursor: CursorView) {
+class TvRemote(var webView: WebView, private val cursor: CursorView, private val touchTarget: View) {
 
     private val density = webView.resources.displayMetrics.density
     private var placed = false
 
     fun show(visible: Boolean) {
         cursor.visibility = if (visible) View.VISIBLE else View.GONE
-        if (visible && !placed && webView.width > 0) {
-            cursor.cx = webView.width / 2f
-            cursor.cy = webView.height / 2f
+        if (visible && !placed && cursor.width > 0) {
+            cursor.cx = cursor.width / 2f
+            cursor.cy = cursor.height / 2f
             placed = true
             cursor.invalidate()
         }
@@ -129,8 +129,8 @@ class TvRemote(private val webView: WebView, private val cursor: CursorView) {
             KeyEvent.KEYCODE_DPAD_UP -> dy = -step
             KeyEvent.KEYCODE_DPAD_DOWN -> dy = step
         }
-        val w = webView.width.toFloat()
-        val h = webView.height.toFloat()
+        val w = cursor.width.toFloat()
+        val h = cursor.height.toFloat() // whole screen, including the Rail Link / Junction+ tabs
         val margin = 4 * density
         val nx = cursor.cx + dx
         val ny = cursor.cy + dy
@@ -164,8 +164,11 @@ class TvRemote(private val webView: WebView, private val cursor: CursorView) {
         val up = MotionEvent.obtain(t, t + 60, MotionEvent.ACTION_UP, x, y, 0)
         down.source = android.view.InputDevice.SOURCE_TOUCHSCREEN
         up.source = android.view.InputDevice.SOURCE_TOUCHSCREEN
-        webView.dispatchTouchEvent(down)
-        webView.dispatchTouchEvent(up)
+        // Tap whatever is under the pointer: the website or one of the tabs.
+        down.offsetLocation(cursor.left.toFloat(), cursor.top.toFloat())
+        up.offsetLocation(cursor.left.toFloat(), cursor.top.toFloat())
+        touchTarget.dispatchTouchEvent(down)
+        touchTarget.dispatchTouchEvent(up)
         down.recycle()
         up.recycle()
     }

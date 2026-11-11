@@ -6,4 +6,6 @@
     <string name="offline_message">We couldn\'t reach Rail Link. Check your Wi-Fi or mobile data, then try again.</string>
     <string name="retry">Try again</string>
     <string name="powered_by">Powered by Devil Stream</string>
+    <string name="tab_rail">Rail Link</string>
+    <string name="tab_jp">Junction+</string>
 </resources>
