@@ -76,6 +76,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
+        // Block screenshots and screen recording (they come out black)
+        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         splash.setKeepOnScreenCondition { keepSplash }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
