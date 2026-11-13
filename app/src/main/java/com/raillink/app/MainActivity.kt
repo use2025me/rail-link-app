@@ -233,6 +233,7 @@ class MainActivity : ComponentActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
+                if (isYouTubeLink(uri) && onStreamSite(view.url)) return true // keep members on our site
                 val scheme = uri.scheme?.lowercase()
                 if (scheme == "http" || scheme == "https") {
                     if (isInternal(uri)) {
@@ -424,6 +425,20 @@ class MainActivity : ComponentActivity() {
             return true
         }
         return super.dispatchKeyEvent(event)
+    }
+
+    private fun isYouTubeLink(uri: Uri): Boolean {
+        val scheme = uri.scheme?.lowercase()
+        if (scheme == "vnd.youtube" || scheme == "youtube") return true
+        val text = uri.toString().lowercase()
+        if (scheme == "intent" && (text.contains("com.google.android.youtube") || text.contains("youtube.com") || text.contains("youtu.be"))) return true
+        val host = uri.host?.lowercase() ?: return false
+        return listOf("youtube.com", "youtu.be", "youtube-nocookie.com").any { host == it || host.endsWith(".$it") }
+    }
+
+    private fun onStreamSite(url: String?): Boolean {
+        val host = url?.let { Uri.parse(it).host?.lowercase() } ?: return false
+        return Config.STREAM_HOSTS.any { host == it || host.endsWith(".$it") }
     }
 
     private fun isInternal(uri: Uri): Boolean {
