@@ -213,6 +213,7 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = false
             loadWithOverviewMode = true
             useWideViewPort = true
+            textZoom = 100 // keep the website its normal size, even if the phone uses large text
             builtInZoomControls = false
             displayZoomControls = false
             setSupportMultipleWindows(false)

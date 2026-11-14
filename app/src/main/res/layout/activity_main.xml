@@ -40,7 +40,7 @@
         <LinearLayout
             android:id="@+id/tabs"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="52dp"
             android:background="@drawable/tab_bar_bg"
             android:orientation="horizontal">
 
@@ -85,8 +85,8 @@
             android:orientation="vertical">
 
             <ImageView
-                android:layout_width="176dp"
-                android:layout_height="35dp"
+                android:layout_width="150dp"
+                android:layout_height="30dp"
                 android:contentDescription="@string/app_name"
                 android:src="@drawable/logo_full" />
 
@@ -130,7 +130,7 @@
             android:shadowDy="1"
             android:shadowRadius="3"
             android:textColor="@color/white"
-            android:textSize="17sp" />
+            android:textSize="13sp" />
     </FrameLayout>
 
     <!-- No connection -->
@@ -198,6 +198,6 @@
             android:shadowDy="1"
             android:shadowRadius="3"
             android:textColor="@color/white"
-            android:textSize="17sp" />
+            android:textSize="13sp" />
     </LinearLayout>
 </FrameLayout>
