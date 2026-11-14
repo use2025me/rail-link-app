@@ -39,6 +39,9 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 
+private const val PAGE_SIZE_FULL =
+    "(function(){var d=document.documentElement;if(d){d.style.zoom='1';}})();"
+
 class MainActivity : ComponentActivity() {
 
     private lateinit var root: FrameLayout
@@ -264,12 +267,14 @@ class MainActivity : ComponentActivity() {
 
             override fun onPageCommitVisible(view: WebView, url: String?) {
                 view.evaluateJavascript(Polish.SCRIPT, null)
+                applyPageSize(view)
                 view.evaluateJavascript(VideoMode.PLAY_HOOK, null)
             }
 
             override fun onPageFinished(view: WebView, url: String?) {
                 if (view !== this@MainActivity.webView) {
                     view.evaluateJavascript(Polish.SCRIPT, null)
+                applyPageSize(view)
                     view.evaluateJavascript(VideoMode.PLAY_HOOK, null)
                     return
                 }
@@ -280,6 +285,7 @@ class MainActivity : ComponentActivity() {
                 }.start()
                 swipe.isRefreshing = false
                 view.evaluateJavascript(Polish.SCRIPT, null)
+                applyPageSize(view)
                 keepSplash = false
                 hideLoading()
                 view.evaluateJavascript(VideoMode.PLAY_HOOK, null)
@@ -382,6 +388,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        listOf(railView, jpView).forEach { applyPageSize(it) }
         updateVideoMode()
     }
 
@@ -396,6 +403,7 @@ class MainActivity : ComponentActivity() {
         webView.evaluateJavascript(VideoMode.ENTER) { result ->
             if (result?.contains("on") == true && !videoMode) {
                 videoMode = true
+                webView.evaluateJavascript(PAGE_SIZE_FULL, null) // the video fills the whole screen
                 progress.visibility = View.GONE
                 tabs.visibility = View.GONE
                 WindowInsetsControllerCompat(window, window.decorView).apply {
@@ -408,11 +416,30 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Shows the website a little smaller on phones so it looks neat and fits more:
+     * 85% upright, 80% sideways. TVs stay at full size. Videos playing full screen are never shrunk.
+     */
+    private fun pageSizeScript(): String {
+        val size = when {
+            tvRemote != null -> "1"
+            resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE -> "0.8"
+            else -> "0.85"
+        }
+        return "(function(){var d=document.documentElement;if(d&&d.style.zoom!=='$size'){d.style.zoom='$size';}})();"
+    }
+
+    private fun applyPageSize(view: WebView) {
+        if (videoMode && view === webView) return
+        view.evaluateJavascript(pageSizeScript(), null)
+    }
+
     private fun exitVideoMode() {
         if (!videoMode) return
         videoMode = false
         tabs.visibility = View.VISIBLE
         webView.evaluateJavascript(VideoMode.EXIT, null)
+        applyPageSize(webView)
         WindowInsetsControllerCompat(window, window.decorView).show(WindowInsetsCompat.Type.systemBars())
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         ViewCompat.requestApplyInsets(root)

@@ -61,7 +61,7 @@
         android:id="@+id/progress"
         style="@android:style/Widget.Material.ProgressBar.Horizontal"
         android:layout_width="match_parent"
-        android:layout_height="3dp"
+        android:layout_height="2dp"
         android:layout_gravity="top"
         android:max="100"
         android:progressDrawable="@drawable/progress_brand"
