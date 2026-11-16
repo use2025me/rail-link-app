@@ -47,7 +47,7 @@
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/tab_text</item>
     </style>
-    <style name="RailLink.EventButton">
+    <style name="RailLink.EventButton" parent="">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">28dp</item>
         <item name="android:background">@drawable/event_button_bg</item>
