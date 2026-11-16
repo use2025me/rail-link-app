@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Lets the built-in update check install new versions -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Event reminders (1 week and 1 day before) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Works on phones, tablets, Fire TV and Android TV -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
@@ -35,6 +37,8 @@
                 <!-- Shows the app on the Android TV / Fire TV home screen -->
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
+            <!-- Long-press the app icon: Junction+ / Next event -->
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
 
             <!-- Open raillinknetworking.com links in the app -->
             <intent-filter>
@@ -45,6 +49,8 @@
                 <data android:scheme="https" android:host="www.raillinknetworking.com" />
             </intent-filter>
         </activity>
+
+        <receiver android:name=".ReminderReceiver" android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

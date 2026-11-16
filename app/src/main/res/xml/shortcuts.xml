@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="next_event"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_event"
+        android:shortcutShortLabel="@string/shortcut_event">
+        <intent
+            android:action="com.raillink.app.NEXT_EVENT"
+            android:targetPackage="com.raillink.app"
+            android:targetClass="com.raillink.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="junction_plus"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_jp"
+        android:shortcutShortLabel="@string/shortcut_jp">
+        <intent
+            android:action="com.raillink.app.JUNCTION_PLUS"
+            android:targetPackage="com.raillink.app"
+            android:targetClass="com.raillink.app.MainActivity" />
+    </shortcut>
+</shortcuts>

@@ -50,6 +50,15 @@ private const val PAGE_SIZE_FULL =
 
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        /** Used by the long-press shortcut and the reminder notification. */
+        const val ACTION_NEXT_EVENT = "com.raillink.app.NEXT_EVENT"
+        const val ACTION_JUNCTION = "com.raillink.app.JUNCTION_PLUS"
+    }
+
+    private var openEventWhenReady = false
+
+
     private lateinit var root: FrameLayout
     // Two websites, one per tab. "webView" is whichever one is showing.
     private lateinit var webView: WebView
@@ -171,7 +180,7 @@ class MainActivity : ComponentActivity() {
             railView.restoreState(savedInstanceState)
             hideLoading()
         } else {
-            openLink(intent?.data)
+            handleStart(intent)
             UpdateChecker(this).check()
         }
 
@@ -466,6 +475,12 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 nextEvent = ev
                 if (ev != null) {
+                    Reminders.schedule(this, ev)
+                    askForReminders()
+                    if (openEventWhenReady) {
+                        openEventWhenReady = false
+                        ev.link?.let { showTab(railView); railView.loadUrl(it) }
+                    }
                     findViewById<TextView>(R.id.event_name).text = ev.name
                     findViewById<TextView>(R.id.event_countdown).text = ev.countdownText()
                 }
@@ -615,6 +630,21 @@ class MainActivity : ComponentActivity() {
     }
 
     /** Open a link from outside the app in the right tab (Junction+ links go to the Junction+ tab). */
+    /** Remembers the page you were on, so the app reopens there if you come back within 12 hours. */
+    private fun saveLastPage(url: String?) {
+        if (url.isNullOrEmpty() || !isInternal(Uri.parse(url))) return
+        getSharedPreferences("app", MODE_PRIVATE).edit()
+            .putString("last_url", url).putLong("last_time", System.currentTimeMillis()).apply()
+    }
+
+    private fun lastPage(): Uri? {
+        val prefs = getSharedPreferences("app", MODE_PRIVATE)
+        val url = prefs.getString("last_url", null) ?: return null
+        val age = System.currentTimeMillis() - prefs.getLong("last_time", 0L)
+        if (age > 12L * 60 * 60 * 1000) return null
+        return Uri.parse(url).takeIf { isInternal(it) }
+    }
+
     private fun openLink(data: Uri?) {
         val host = data?.host?.lowercase() ?: ""
         val isJp = host == "junctionplus.com" || host.endsWith(".junctionplus.com")
@@ -632,7 +662,34 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent.data?.let { if (isInternal(it)) openLink(it) }
+        when (intent.action) {
+            ACTION_NEXT_EVENT, ACTION_JUNCTION -> handleStart(intent)
+            else -> intent.data?.let { if (isInternal(it)) openLink(it) }
+        }
+    }
+
+    /** Works out what to open: a shortcut, a link from outside, or the page you were last on. */
+    private fun handleStart(intent: Intent?) {
+        when (intent?.action) {
+            ACTION_JUNCTION -> openLink(Uri.parse(Config.JP_URL))
+            ACTION_NEXT_EVENT -> {
+                eventHidden = false
+                val link = nextEvent?.link
+                if (link != null) { showTab(railView); railView.loadUrl(link) }
+                else { openEventWhenReady = true; if (railView.url == null) railView.loadUrl(Config.HOME_URL); showTab(railView) }
+            }
+            else -> openLink(intent?.data ?: lastPage())
+        }
+    }
+
+    /** Asks once (Android 13+) if the app may show event reminders. */
+    private fun askForReminders() {
+        if (Build.VERSION.SDK_INT < 33) return
+        if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) return
+        val prefs = getSharedPreferences("app", MODE_PRIVATE)
+        if (prefs.getBoolean("asked_notify", false)) return
+        prefs.edit().putBoolean("asked_notify", true).apply()
+        requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 5)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -647,6 +704,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onPause() {
+        saveLastPage(webView.url)
         railView.onPause()
         jpView.onPause()
         CookieManager.getInstance().flush()

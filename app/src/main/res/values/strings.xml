@@ -8,4 +8,6 @@
     <string name="powered_by">Built by <b><font color="#6AA5CF">Devil Media Group</font></b></string>
     <string name="tab_rail">Rail Link</string>
     <string name="tab_jp">Junction+</string>
+    <string name="shortcut_event">Next event</string>
+    <string name="shortcut_jp">Junction+</string>
 </resources>
