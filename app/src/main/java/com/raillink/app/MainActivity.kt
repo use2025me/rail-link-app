@@ -5,6 +5,8 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
@@ -25,9 +27,11 @@ import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.FrameLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -141,6 +145,7 @@ class MainActivity : ComponentActivity() {
         }
 
         findViewById<Button>(R.id.retry).setOnClickListener {
+            webView.settings.cacheMode = if (isOnline()) WebSettings.LOAD_DEFAULT else WebSettings.LOAD_CACHE_ELSE_NETWORK
             offline.visibility = View.GONE
             webView.visibility = View.VISIBLE
             if (webView.url.isNullOrEmpty()) webView.loadUrl(Config.HOME_URL) else webView.reload()
@@ -216,6 +221,8 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = false
             loadWithOverviewMode = true
             useWideViewPort = true
+            // With no internet, show the pages you looked at last instead of an error
+            cacheMode = if (isOnline()) WebSettings.LOAD_DEFAULT else WebSettings.LOAD_CACHE_ELSE_NETWORK
             textZoom = 100 // keep the website its normal size, even if the phone uses large text
             builtInZoomControls = false
             displayZoomControls = false
@@ -384,6 +391,10 @@ class MainActivity : ComponentActivity() {
                 webView.scrollY > 0 || !pageAtTop
         }
         if (isTvDevice(this)) swipe.isEnabled = false
+        findViewById<ImageButton>(R.id.share).apply {
+            visibility = if (isTvDevice(this@MainActivity)) View.GONE else View.VISIBLE
+            setOnClickListener { sharePage() }
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -403,6 +414,7 @@ class MainActivity : ComponentActivity() {
         webView.evaluateJavascript(VideoMode.ENTER) { result ->
             if (result?.contains("on") == true && !videoMode) {
                 videoMode = true
+                findViewById<View>(R.id.share).visibility = View.GONE
                 webView.evaluateJavascript(PAGE_SIZE_FULL, null) // the video fills the whole screen
                 progress.visibility = View.GONE
                 tabs.visibility = View.GONE
@@ -434,9 +446,28 @@ class MainActivity : ComponentActivity() {
         view.evaluateJavascript(pageSizeScript(), null)
     }
 
+    private fun isOnline(): Boolean {
+        val cm = getSystemService(ConnectivityManager::class.java) ?: return true
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
+    /** Opens the phone's share menu with the page that's on screen. */
+    private fun sharePage() {
+        val url = webView.url ?: return
+        val title = webView.title?.takeIf { it.isNotBlank() } ?: getString(R.string.app_name)
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, title)
+            putExtra(Intent.EXTRA_TEXT, "$title\n$url")
+        }
+        startActivity(Intent.createChooser(send, "Share"))
+    }
+
     private fun exitVideoMode() {
         if (!videoMode) return
         videoMode = false
+        if (!isTvDevice(this)) findViewById<View>(R.id.share).visibility = View.VISIBLE
         tabs.visibility = View.VISIBLE
         webView.evaluateJavascript(VideoMode.EXIT, null)
         applyPageSize(webView)

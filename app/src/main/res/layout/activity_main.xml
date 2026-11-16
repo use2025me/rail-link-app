@@ -56,6 +56,20 @@
         </LinearLayout>
     </LinearLayout>
 
+    <!-- Share this page (phones only) -->
+    <ImageButton
+        android:id="@+id/share"
+        android:layout_width="46dp"
+        android:layout_height="46dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="68dp"
+        android:background="@drawable/share_bg"
+        android:contentDescription="Share this page"
+        android:elevation="6dp"
+        android:src="@drawable/ic_share"
+        android:visibility="gone" />
+
     <!-- Thin teal-to-yellow bar while a page loads -->
     <ProgressBar
         android:id="@+id/progress"
