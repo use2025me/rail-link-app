@@ -8,6 +8,8 @@ import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
+import android.provider.CalendarContract
+import java.time.ZoneId
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.os.Bundle
@@ -79,6 +81,8 @@ class MainActivity : ComponentActivity() {
 
     // Phones: video fills the screen when turned sideways
     private var videoMode = false
+    private var nextEvent: RailEvent? = null
+    private var eventHidden = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
@@ -391,6 +395,7 @@ class MainActivity : ComponentActivity() {
                 webView.scrollY > 0 || !pageAtTop
         }
         if (isTvDevice(this)) swipe.isEnabled = false
+        setUpEventStrip()
         findViewById<ImageButton>(R.id.share).apply {
             visibility = if (isTvDevice(this@MainActivity)) View.GONE else View.VISIBLE
             setOnClickListener { sharePage() }
@@ -415,6 +420,7 @@ class MainActivity : ComponentActivity() {
             if (result?.contains("on") == true && !videoMode) {
                 videoMode = true
                 findViewById<View>(R.id.share).visibility = View.GONE
+                findViewById<View>(R.id.event_strip).visibility = View.GONE
                 webView.evaluateJavascript(PAGE_SIZE_FULL, null) // the video fills the whole screen
                 progress.visibility = View.GONE
                 tabs.visibility = View.GONE
@@ -446,6 +452,61 @@ class MainActivity : ComponentActivity() {
         view.evaluateJavascript(pageSizeScript(), null)
     }
 
+    /** Next-event strip: name, countdown, Add to calendar and Directions. Phones only. */
+    private fun setUpEventStrip() {
+        if (isTvDevice(this)) return
+        findViewById<View>(R.id.event_close).setOnClickListener { eventHidden = true; updateEventStrip() }
+        findViewById<View>(R.id.event_calendar).setOnClickListener { nextEvent?.let { addToCalendar(it) } }
+        findViewById<View>(R.id.event_directions).setOnClickListener { nextEvent?.let { openDirections(it) } }
+        findViewById<View>(R.id.event_name).setOnClickListener {
+            nextEvent?.link?.let { link -> showTab(railView); railView.loadUrl(link) }
+        }
+        Thread {
+            val ev = Events.fetchNext()
+            runOnUiThread {
+                nextEvent = ev
+                if (ev != null) {
+                    findViewById<TextView>(R.id.event_name).text = ev.name
+                    findViewById<TextView>(R.id.event_countdown).text = ev.countdownText()
+                }
+                updateEventStrip()
+            }
+        }.start()
+    }
+
+    private fun updateEventStrip() {
+        val show = nextEvent != null && !eventHidden && !videoMode && webView === railView && !isTvDevice(this)
+        findViewById<View>(R.id.event_strip).visibility = if (show) View.VISIBLE else View.GONE
+    }
+
+    private fun addToCalendar(ev: RailEvent) {
+        val zone = ZoneId.systemDefault()
+        val intent = Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI).apply {
+            putExtra(CalendarContract.Events.TITLE, ev.name)
+            putExtra(CalendarContract.Events.EVENT_LOCATION, ev.venue)
+            ev.link?.let { putExtra(CalendarContract.Events.DESCRIPTION, it) }
+            if (ev.start != null) {
+                val begin = ev.date.atTime(ev.start).atZone(zone).toInstant().toEpochMilli()
+                val end = ev.date.atTime(ev.end ?: ev.start.plusHours(8)).atZone(zone).toInstant().toEpochMilli()
+                putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, begin)
+                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, end)
+            } else {
+                putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
+                putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, ev.date.atStartOfDay(zone).toInstant().toEpochMilli())
+                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, ev.date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli())
+            }
+        }
+        try { startActivity(intent) } catch (e: Exception) { }
+    }
+
+    private fun openDirections(ev: RailEvent) {
+        val q = Uri.encode(ev.venue)
+        val maps = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=$q"))
+        try { startActivity(maps) } catch (e: Exception) {
+            try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=$q"))) } catch (_: Exception) { }
+        }
+    }
+
     private fun isOnline(): Boolean {
         val cm = getSystemService(ConnectivityManager::class.java) ?: return true
         val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
@@ -468,6 +529,7 @@ class MainActivity : ComponentActivity() {
         if (!videoMode) return
         videoMode = false
         if (!isTvDevice(this)) findViewById<View>(R.id.share).visibility = View.VISIBLE
+        updateEventStrip()
         tabs.visibility = View.VISIBLE
         webView.evaluateJavascript(VideoMode.EXIT, null)
         applyPageSize(webView)
@@ -547,6 +609,7 @@ class MainActivity : ComponentActivity() {
         tvRemote?.webView = target
         tabRail.isSelected = target === railView
         tabJp.isSelected = target === jpView
+        updateEventStrip()
         offline.visibility = View.GONE
         target.visibility = View.VISIBLE
     }
